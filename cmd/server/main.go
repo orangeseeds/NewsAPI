@@ -1,8 +1,9 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/orangeseeds/go-api/pkg/api"
@@ -11,25 +12,53 @@ import (
 )
 
 func main() {
-	err := run()
+	var (
+		addr          = flag.String("addr", ":8080", "port number")
+		runMigrations = flag.Bool("migrate", false, "run migration")
+	)
+
+	flag.Parse()
+	// f, err := os.OpenFile("./testlogfile", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	// if err != nil {
+	// 	log.Fatalf("error opening file: %v", err)
+	// }
+	// defer f.Close()
+	// log.SetOutput(f)
+
+	err := run(*runMigrations, *addr)
 	if err != nil {
 		log.Fatalln(err)
 	}
 }
 
-func run() error {
-	neoDriver, err := connectDB()
+func run(runMigrations bool, addr string) error {
+	config := app.LoadConfig("./config.json")
+
+	neoDriver, err := connectDB(config.Uri, config.Username, config.Password)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	// Storage
 	storage := repository.NewStorage(neoDriver)
+
+	// run migrations
+	if runMigrations {
+		err = storage.RunMigrations()
+		if err != nil {
+			log.Fatalln(err)
+		}
+		log.Println("Migrations ran successfully")
+		return nil
+	}
+
 	// Services
 	userService := api.NewUserService(storage)
 
-	router := http.NewServeMux()
-	server := app.NewServer(router, userService)
-	err = server.Run(":8080")
+	router := app.NewRouter()
+	server := app.NewServer(config, router, userService)
+
+	log.Printf("serving on :%v", config.Port)
+	err = server.Run(":" + fmt.Sprintf("%v", config.Port))
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -37,16 +66,10 @@ func run() error {
 	return nil
 }
 
-func connectDB() (*neo4j.Driver, error) {
+func connectDB(uri string, username string, password string) (neo4j.Driver, error) {
 
-	config := config{
-		Uri:      "neo4j+ssc://776b369c.databases.neo4j.io",
-		Password: "g41MQzUv5GlG1LlcH-9J-VXkkIaupqdfBNoTgesuTpo",
-		Username: "neo4j",
-	}
-
-	driver, err := neo4j.NewDriver(config.Uri,
-		neo4j.BasicAuth(config.Username, config.Password, ""))
+	driver, err := neo4j.NewDriver(uri,
+		neo4j.BasicAuth(username, password, ""))
 	if err != nil {
 		return nil, err
 	}
@@ -54,12 +77,6 @@ func connectDB() (*neo4j.Driver, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Println("Connected to db successfully as " + config.Username)
-	return &driver, nil
-}
-
-type config struct {
-	Uri      string
-	Password string
-	Username string
+	log.Println("Connected to DB successfully as " + username)
+	return driver, nil
 }
