@@ -1,82 +1,76 @@
 package main
 
 import (
+	"context"
 	"flag"
-	"fmt"
 	"log"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/orangeseeds/go-api/pkg/api"
 	"github.com/orangeseeds/go-api/pkg/app"
-	"github.com/orangeseeds/go-api/pkg/repository"
+	"github.com/orangeseeds/go-api/pkg/storage"
 )
 
 func main() {
 	var (
-		addr          = flag.String("addr", ":8080", "port number")
-		runMigrations = flag.Bool("migrate", false, "run migration")
+		addr    = *flag.String("addr", "8080", "port number")
+		migrate = *flag.Bool("migrate", false, "run migration")
 	)
-
 	flag.Parse()
-	// f, err := os.OpenFile("./testlogfile", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	// if err != nil {
-	// 	log.Fatalf("error opening file: %v", err)
-	// }
-	// defer f.Close()
-	// log.SetOutput(f)
 
-	err := run(*runMigrations, *addr)
-	if err != nil {
-		log.Fatalln(err)
-	}
-}
-
-func run(runMigrations bool, addr string) error {
 	config := app.LoadConfig("./config.json")
-
-	neoDriver, err := connectDB(config.Uri, config.Username, config.Password)
+	db, err := connectDB(config.Uri, config.Username, config.Password)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	// Storage
-	storage := repository.NewStorage(neoDriver)
-
-	// run migrations
-	if runMigrations {
-		err = storage.RunMigrations()
-		if err != nil {
-			log.Fatalln(err)
-		}
-		log.Println("Migrations ran successfully")
-		return nil
-	}
-
-	// Services
-	userService := api.NewUserService(storage)
 
 	router := app.NewRouter()
+	storage := storage.NewStorage(db, config.Uri)
+	userService := api.NewUserService(storage)
+
+	runMigrations(storage, migrate)
 	server := app.NewServer(config, router, userService)
-
-	log.Printf("serving on :%v", config.Port)
-	err = server.Run(":" + fmt.Sprintf("%v", config.Port))
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	return nil
+	listenAndServe(server, addr)
 }
 
-func connectDB(uri string, username string, password string) (neo4j.Driver, error) {
-
-	driver, err := neo4j.NewDriver(uri,
-		neo4j.BasicAuth(username, password, ""))
+// connectDB initializes the driver with username and password authentication,
+// uri param points to the host address of the neo4j database. It also check the connectivity with
+// the host and returns neo4j.Driver
+func connectDB(uri string, username string, password string) (neo4j.DriverWithContext, error) {
+	driver, err := neo4j.NewDriverWithContext(
+		uri, neo4j.BasicAuth(username, password, ""),
+	)
 	if err != nil {
 		return nil, err
 	}
-	err = driver.VerifyConnectivity()
+	err = driver.VerifyConnectivity(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	log.Println("Connected to DB successfully as " + username)
 	return driver, nil
+}
+
+// runMigration sets required value constrains in the neo4j server,
+// run is set to true when "-migrate" flag is provided when running the application
+func runMigrations(storage storage.Storage, run bool) {
+	if !run {
+		return
+	}
+	err := storage.RunMigrations()
+	if err != nil {
+		panic(err)
+	}
+	log.Println("Migrations ran successfully")
+}
+
+// listenAndServe serves the application on port :addr
+// and exits the application if it encounters any error
+func listenAndServe(server *app.Server, addr string) {
+	log.Printf("serving on port :%v\n", addr)
+	err := server.Run(":" + addr)
+	if err != nil {
+		log.Fatalf("error running the server: %v", err)
+	}
+
 }

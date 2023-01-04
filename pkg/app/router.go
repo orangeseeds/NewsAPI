@@ -2,8 +2,6 @@ package app
 
 import (
 	"net/http"
-
-	"github.com/orangeseeds/go-api/pkg/helpers"
 )
 
 type Router struct {
@@ -60,7 +58,6 @@ func With(fn http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
 
 func (route *Route) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if route.Method != r.Method {
-		helpers.RespondHTTPErr(w, http.StatusMethodNotAllowed)
 		return
 	}
 	route.Handler(w, r)

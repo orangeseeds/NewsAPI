@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	h "github.com/orangeseeds/go-api/pkg/helpers"
+	"github.com/orangeseeds/go-api/pkg/util"
 )
 
 type middlewares struct {
@@ -27,14 +27,14 @@ func (m *middlewares) Auth(fn http.HandlerFunc) http.HandlerFunc {
 		auth := r.Header.Get("Authorization")
 		token := strings.TrimPrefix(auth, "Bearer ")
 		secret := m.config.JwtSecret
-		jwtClaims, err := h.GetJWTClaims(secret, token)
+		jwtClaims, err := util.GetJWTClaims(secret, token)
 		if err != nil {
-			h.RespondHTTPErr(w, http.StatusUnauthorized)
+			util.RespondHTTPErr(w, http.StatusUnauthorized)
 			return
 		}
 		user, ok := jwtClaims["user"]
 		if !ok {
-			h.RespondHTTPErr(w, http.StatusUnauthorized)
+			util.RespondHTTPErr(w, http.StatusUnauthorized)
 			return
 		}
 		ctx := context.WithValue(context.Background(), "user", user)
