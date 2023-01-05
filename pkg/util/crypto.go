@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"math/rand"
+	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
@@ -22,12 +23,24 @@ func Hash(password string) (string, error) {
 }
 
 func RandomString(n int) string {
+	rand.Seed(time.Now().Unix())
 	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
 	s := make([]rune, n)
 	for i := range s {
 		s[i] = letters[rand.Intn(len(letters))]
 	}
 	return string(s)
+}
+
+func AuthToken(secret string, userIdent string, validDuration time.Duration) (string, error) {
+	token, err := NewToken(secret, map[string]any{
+		"user": userIdent,
+		"exp":  time.Now().Add(validDuration).Unix(),
+	})
+	if err != nil {
+		return "", err
+	}
+	return token, nil
 }
 
 func NewToken(secret string, claims jwt.MapClaims) (string, error) {

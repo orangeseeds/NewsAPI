@@ -1,9 +1,29 @@
 package api
 
-type AuthUserRequest struct {
-	Username string `json:"username,omitempty"`
-	Password string `json:"password"`
-	Email    string `json:"email"`
+type CreateUserRequest struct {
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password,omitempty" validate:"required"`
+	Email    string `json:"email" validate:"required,email"`
+}
+
+type LoginRequest struct {
+	// Username string `json:"username"`
+	Password string `json:"password,omitempty" validate:"required"`
+	Email    string `json:"email" validate:"required,email"`
+}
+
+type ReadArticleRequest struct {
+	ArticleId string `json:"article_id" validate:"required"`
+}
+type BookmarkArticleRequest struct {
+	ArticleId string `json:"article_id" validate:"required"`
+}
+
+type FollowSourceRequest struct {
+	SourceId string `json:"source_id" validate:"required"`
+}
+type BlockSourceRequest struct {
+	SourceId string `json:"source_id" validate:"required"`
 }
 
 type User struct {
@@ -15,21 +35,28 @@ type User struct {
 }
 
 type Article struct {
-	ArticleId     string   `json:"article_id"`
-	Title         string   `json:"title"`
-	Content       string   `json:"content"`
-	PublishedDate string   `json:"published_date"`
-	URLtoMedia    []string `json:"url_to_media"`
-	URltoArticle  string   `json:"url_to_article"`
+	ArticleId     string   `json:"article_id,omitempty"`
+	Title         string   `json:"title,omitempty"`
+	Content       string   `json:"content,omitempty"`
+	PublishedDate string   `json:"published_date,omitempty"`
+	URLtoMedia    []string `json:"url_to_media,omitempty"`
+	URltoArticle  string   `json:"url_to_article,omitempty"`
 }
 
-type SaveArticleRequest struct {
-	ArticleId string `json:"article_id"`
+type Source struct {
+	SourceId string `json:"source_id,omitempty"`
+	Name     string `json:"name,omitempty"`
+	URL      string `json:"url,omitempty"`
+	ImageURL string `json:"image_url,omitempty"`
 }
 
-type UserService interface {
-	Create(user AuthUserRequest) error
-	Login(email string, password string) (*User, error)
-	Read(email string, articleId string) (*Article, error)
-	Bookmark(email string, articleId string) (*Article, error)
+type Creator struct {
+	CreatorId string `json:"creator_id,omitempty"`
+	Name      string `json:"name,omitempty"`
+}
+
+type Category struct {
+	CategoryId string `json:"category_id,omitempty"`
+	Name       string `json:"name,omitempty"`
+	ImageURL   string `json:"image_url,omitempty"`
 }

@@ -24,10 +24,19 @@ func Respond(w http.ResponseWriter, status int, data interface{}) {
 	}
 }
 
-func RespondErr(w http.ResponseWriter, status int, args ...interface{}) {
+func RespondErr(w http.ResponseWriter, status int, data any) {
+	var resp any
+	resp, ok := data.(error)
+	if ok {
+		resp = fmt.Sprint(resp)
+	} else {
+		resp = data
+	}
+
 	Respond(w, status, map[string]interface{}{
-		"error": map[string]interface{}{
-			"message": fmt.Sprint(args...),
+		"data": []any{},
+		"error": map[string]any{
+			"message": resp,
 		},
 		"success": false,
 	})

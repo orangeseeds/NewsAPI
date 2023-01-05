@@ -62,7 +62,7 @@ func Reduce[E, V any](arr []E, callback func(carry V, obj E) V) V {
 	return carry
 }
 
-func Find[E, V any](arr []E, callback func(E) bool) *E {
+func Find[E any](arr []E, callback func(E) bool) *E {
 	for _, item := range arr {
 		found := callback(item)
 		if found {

@@ -13,8 +13,8 @@ import (
 
 func main() {
 	var (
-		addr    = *flag.String("addr", "8080", "port number")
-		migrate = *flag.Bool("migrate", false, "run migration")
+		addr    = flag.String("addr", "8080", "port number")
+		migrate = flag.Bool("migrate", false, "run migration")
 	)
 	flag.Parse()
 
@@ -24,13 +24,14 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	storage := storage.NewStorage(db, config.Username)
 	router := app.NewRouter()
-	storage := storage.NewStorage(db, config.Uri)
 	userService := api.NewUserService(storage)
 
-	runMigrations(storage, migrate)
+	runMigrations(storage, *migrate)
+
 	server := app.NewServer(config, router, userService)
-	listenAndServe(server, addr)
+	listenAndServe(server, *addr)
 }
 
 // connectDB initializes the driver with username and password authentication,
@@ -61,7 +62,8 @@ func runMigrations(storage storage.Storage, run bool) {
 	if err != nil {
 		panic(err)
 	}
-	log.Println("Migrations ran successfully")
+	log.Fatalln("Migrations ran successfully")
+
 }
 
 // listenAndServe serves the application on port :addr

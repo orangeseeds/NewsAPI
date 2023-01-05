@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/orangeseeds/go-api/pkg/api"
@@ -15,10 +16,15 @@ const (
 
 type Storage interface {
 	RunMigrations() error
-	CreateUser(request api.AuthUserRequest) error
-	FindUserByEmailAndPassword(email string, password string) (*api.User, error)
+
+	// UserService Methods
+	CreateUser(api.CreateUserRequest) (string, error)
+	FindUserByEmailAndPassword(string, string) (*api.User, error)
 	SetUserReadArticle(string, string) (*api.Article, error)
 	SetUserBookmarksArticle(string, string) (*api.Article, error)
+	DelUserBookmarksArticle(string, string) (*api.Article, error)
+	SetUserFollowsSource(string, string) (*api.Source, error)
+	DelUserFollowsSource(string, string) (*api.Source, error)
 }
 type storage struct {
 	ctx   context.Context
@@ -33,24 +39,28 @@ func NewStorage(neo neo4j.DriverWithContext, name string) Storage {
 	}
 }
 
-func (s storage) RunCypher(cypher string, params map[string]any, mode neo4j.AccessMode) (neo4j.ResultWithContext, error) {
+func (s storage) RunCypher(cypher string, params map[string]any, mode neo4j.AccessMode) (neo4j.SessionWithContext, neo4j.ResultWithContext, error) {
 	dbName, ok := s.ctx.Value("dbName").(string)
 	if !ok {
-		return nil, errors.New("need a dbName in config")
+		return nil, nil, errors.New("need a dbName in config")
 	}
 
 	session := s.neoDB.NewSession(s.ctx, neo4j.SessionConfig{
 		AccessMode:   mode,
 		DatabaseName: dbName,
 	})
-	defer session.Close(s.ctx)
 
 	res, err := session.Run(s.ctx, cypher, params)
 	if err != nil {
-		return nil, err
+		defer session.Close(s.ctx)
+		neo4jError, ok := err.(*neo4j.Neo4jError)
+		if ok && neo4jError.Title() == "ConstraintValidationFailed" {
+			return nil, nil, NewError(InvalidConstraint, err.Error())
+		}
+		return nil, nil, NewError(NeoError, err.Error())
 	}
 
-	return res, nil
+	return session, res, nil
 }
 
 func (s *storage) RunMigrations() error {
@@ -77,14 +87,14 @@ func (s *storage) RunMigrations() error {
 		`CREATE CONSTRAINT unique_article_id IF NOT EXISTS
 		FOR (x:Article) REQUIRE x.article_id IS UNIQUE`,
 
-		`CREATE CONSTRAINT unique_author_id IF NOT EXISTS
-		FOR (x:Author) REQUIRE x.author_id IS UNIQUE`,
+		`CREATE CONSTRAINT unique_creator_id IF NOT EXISTS
+		FOR (x:Creator) REQUIRE x.creator_id IS UNIQUE`,
 
 		`CREATE CONSTRAINT unique_source_id IF NOT EXISTS
 		FOR (x:Source) REQUIRE x.source_id IS UNIQUE`,
 
-		`CREATE CONSTRAINT unique_topic_id IF NOT EXISTS
-		FOR (x:Topic) REQUIRE x.topic_id IS UNIQUE`,
+		`CREATE CONSTRAINT unique_category_id IF NOT EXISTS
+		FOR (x:Category) REQUIRE x.category_id IS UNIQUE`,
 
 		`CREATE CONSTRAINT unique_user_email IF NOT EXISTS
 		FOR (x:User) REQUIRE x.email IS UNIQUE`,
@@ -93,11 +103,12 @@ func (s *storage) RunMigrations() error {
 		FOR (x:User) REQUIRE x.password_reset_token IS UNIQUE`,
 	}
 
-	for i := range constraints {
-		_, err := session.Run(s.ctx, constraints[i], nil)
+	for _, item := range constraints {
+		_, err := session.Run(s.ctx, item, nil)
 		if err != nil {
 			return err
 		}
+		log.Printf("cypher: %s ,successfully completed.\n", item)
 	}
 	return nil
 
