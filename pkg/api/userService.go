@@ -5,9 +5,11 @@ type UserService interface {
 	Login(email string, password string) (*User, error)
 	Read(userId string, articleId string) (*Article, error)
 	Bookmark(userId string, articleId string) (*Article, error)
-	FollowSource(userId string, sourceId string) (*Source, error)
 	UnBookmark(userId string, articleId string) (*Article, error)
+	FollowSource(userId string, sourceId string) (*Source, error)
 	UnFollowSource(userId string, sourceId string) (*Source, error)
+	FollowCategory(userId string, categoryId string) (*Category, error)
+	UnFollowCategory(userId string, categoryId string) (*Category, error)
 }
 
 type UserRepository interface {
@@ -18,6 +20,8 @@ type UserRepository interface {
 	DelUserBookmarksArticle(string, string) (*Article, error)
 	SetUserFollowsSource(string, string) (*Source, error)
 	DelUserFollowsSource(string, string) (*Source, error)
+	SetUserFollowsCategory(string, string) (*Category, error)
+	DelUserFollowsCategory(string, string) (*Category, error)
 }
 
 type userService struct {
@@ -61,13 +65,6 @@ func (u *userService) Bookmark(userId string, articleId string) (*Article, error
 	}
 	return article, nil
 }
-func (u *userService) FollowSource(userId string, sourceId string) (*Source, error) {
-	source, err := u.storage.SetUserFollowsSource(userId, sourceId)
-	if err != nil {
-		return nil, err
-	}
-	return source, nil
-}
 
 func (u *userService) UnBookmark(userId string, articleId string) (*Article, error) {
 	article, err := u.storage.DelUserBookmarksArticle(userId, articleId)
@@ -76,10 +73,35 @@ func (u *userService) UnBookmark(userId string, articleId string) (*Article, err
 	}
 	return article, nil
 }
+
+func (u *userService) FollowSource(userId string, sourceId string) (*Source, error) {
+	source, err := u.storage.SetUserFollowsSource(userId, sourceId)
+	if err != nil {
+		return nil, err
+	}
+	return source, nil
+}
+
 func (u *userService) UnFollowSource(userId string, sourceId string) (*Source, error) {
 	source, err := u.storage.DelUserFollowsSource(userId, sourceId)
 	if err != nil {
 		return nil, err
 	}
 	return source, nil
+}
+
+func (u *userService) FollowCategory(userId string, categoryId string) (*Category, error) {
+	category, err := u.storage.SetUserFollowsCategory(userId, categoryId)
+	if err != nil {
+		return nil, err
+	}
+	return category, nil
+}
+
+func (u *userService) UnFollowCategory(userId string, categoryId string) (*Category, error) {
+	category, err := u.storage.DelUserFollowsCategory(userId, categoryId)
+	if err != nil {
+		return nil, err
+	}
+	return category, nil
 }

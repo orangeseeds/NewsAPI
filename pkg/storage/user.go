@@ -32,13 +32,13 @@ func (s *storage) CreateUser(request api.CreateUserRequest) (string, error) {
 		return "", NewError(NeoError, err.Error())
 	}
 	defer session.Close(s.ctx)
+
 	record, err := res.Single(s.ctx)
 	if err != nil {
 		return "", NewError(NeoError, err.Error())
 	}
 
 	userId, _ := record.Get("user_id")
-
 	return userId.(string), nil
 }
 
@@ -241,5 +241,66 @@ func (s *storage) DelUserFollowsSource(userId string, sourceId string) (*api.Sou
 	source_id, _ := record.Get("source_id")
 	return &api.Source{
 		SourceId: source_id.(string),
+	}, nil
+}
+
+func (s *storage) DelUserFollowsCategory(userId string, categoryId string) (*api.Category, error) {
+	query := `
+		MATCH (s:Category {category_id: $category_id}) 
+		MATCH (u:User {user_id: $user_id})
+		MATCH (u)-[f:Follows]->(s)
+		DELETE f
+		RETURN 
+			s.category_id as category_id
+		`
+	params := map[string]any{
+		"category_id": categoryId,
+		"user_id":     userId,
+	}
+
+	session, res, err := s.RunCypher(query, params, WriteMode)
+	if err != nil {
+		return nil, err
+	}
+	defer session.Close(s.ctx)
+
+	record, err := res.Single(s.ctx)
+	if err != nil {
+		return nil, NewError(NoMatchFound, "no records found with given info.")
+	}
+
+	category_id, _ := record.Get("category_id")
+	return &api.Category{
+		CategoryId: category_id.(string),
+	}, nil
+}
+
+func (s *storage) SetUserFollowsCategory(userId string, categoryId string) (*api.Category, error) {
+	query := `
+	MATCH (s:Category {category_id: $category_id}) 
+		MATCH (u:User {user_id: $user_id})
+		MERGE (u)-[:Follows]->(s)
+		RETURN 
+			s.category_id as category_id
+		`
+	params := map[string]any{
+		"category_id": categoryId,
+		"user_id":     userId,
+	}
+
+	session, res, err := s.RunCypher(query, params, WriteMode)
+	if err != nil {
+		return nil, err
+	}
+	defer session.Close(s.ctx)
+
+	record, err := res.Single(s.ctx)
+	if err != nil {
+		return nil, NewError(NoMatchFound, "no records found with given info.")
+	}
+
+	category_id, _ := record.Get("category_id")
+	return &api.Category{
+		CategoryId: category_id.(string),
 	}, nil
 }

@@ -12,12 +12,15 @@ import (
 
 func (s *Server) handleApiStatus(w http.ResponseWriter, r *http.Request) {
 	util.Respond(w, http.StatusOK, map[string]any{
-		"data": "The API is running smoothly",
+		"data": map[string]any{
+			"version": "1.0",
+		},
+		"message": "The API is running smoothly",
+		"success": true,
 	})
 }
 
 func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
 	u := api.CreateUserRequest{}
 	err := util.DecodeBody(r, &u)
 	if err != nil {
@@ -49,7 +52,6 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
 	u := api.LoginRequest{}
 	err := util.DecodeBody(r, &u)
 	if err != nil {
@@ -82,7 +84,6 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleReadArticle(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
 	a := api.ReadArticleRequest{}
 	err := util.DecodeBody(r, &a)
 	if err != nil {
@@ -110,8 +111,11 @@ func (s *Server) handleReadArticle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleBookmarkArticle(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
 	a := api.BookmarkArticleRequest{}
+	// ok := decodeAndValidate(w, r, &a)
+	// if !ok {
+	// 	return
+	// }
 	err := util.DecodeBody(r, &a)
 	if err != nil {
 		util.RespondHTTPErr(w, http.StatusInternalServerError)
@@ -136,7 +140,6 @@ func (s *Server) handleBookmarkArticle(w http.ResponseWriter, r *http.Request) {
 	})
 }
 func (s *Server) handleUnBookmarkArticle(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
 	a := api.BookmarkArticleRequest{}
 	err := util.DecodeBody(r, &a)
 	if err != nil {
@@ -163,7 +166,6 @@ func (s *Server) handleUnBookmarkArticle(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *Server) handleFollowSource(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
 	a := api.FollowSourceRequest{}
 	err := util.DecodeBody(r, &a)
 	if err != nil {
@@ -190,7 +192,6 @@ func (s *Server) handleFollowSource(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleUnFollowSource(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
 	a := api.FollowSourceRequest{}
 	err := util.DecodeBody(r, &a)
 	if err != nil {
@@ -214,4 +215,71 @@ func (s *Server) handleUnFollowSource(w http.ResponseWriter, r *http.Request) {
 		"data":    source,
 		"message": "removed the source from followed list.",
 	})
+}
+
+func (s *Server) handleUnFollowCategory(w http.ResponseWriter, r *http.Request) {
+	a := api.FollowCategoryRequest{}
+	err := util.DecodeBody(r, &a)
+	if err != nil {
+		util.RespondHTTPErr(w, http.StatusInternalServerError)
+	}
+
+	errs := validator.ValidateStruct(a)
+	if len(errs) > 0 {
+		util.RespondErr(w, http.StatusBadRequest, errs)
+		return
+	}
+	userId := r.Context().Value("user").(string)
+	category, err := s.userService.UnFollowCategory(userId, a.CategoryId)
+	if err != nil {
+		util.RespondErr(w, http.StatusBadRequest, err)
+		return
+	}
+
+	util.Respond(w, http.StatusOK, map[string]any{
+		"success": true,
+		"data":    category,
+		"message": "removed the category from followed list.",
+	})
+}
+
+func (s *Server) handleFollowCategory(w http.ResponseWriter, r *http.Request) {
+	a := api.FollowCategoryRequest{}
+	err := util.DecodeBody(r, &a)
+	if err != nil {
+		util.RespondHTTPErr(w, http.StatusInternalServerError)
+	}
+
+	errs := validator.ValidateStruct(a)
+	if len(errs) > 0 {
+		util.RespondErr(w, http.StatusBadRequest, errs)
+		return
+	}
+	userId := r.Context().Value("user").(string)
+	category, err := s.userService.FollowCategory(userId, a.CategoryId)
+	if err != nil {
+		util.RespondErr(w, http.StatusBadRequest, err)
+		return
+	}
+
+	util.Respond(w, http.StatusOK, map[string]any{
+		"success": true,
+		"data":    category,
+		"message": "added the category to followed list.",
+	})
+}
+
+func decodeAndValidate[T any](w http.ResponseWriter, r *http.Request, v *T) bool {
+	err := util.DecodeBody(r, v)
+	if err != nil {
+		util.RespondHTTPErr(w, http.StatusInternalServerError)
+		return false
+	}
+
+	errs := validator.ValidateStruct(*v)
+	if len(errs) != 0 {
+		util.RespondErr(w, http.StatusBadRequest, errs)
+		return false
+	}
+	return true
 }

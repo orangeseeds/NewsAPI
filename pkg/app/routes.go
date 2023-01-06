@@ -17,14 +17,14 @@ package app
 // [GET]     bookmarks/ => returns list of currently bookmarked articles
 //
 // [POST]    bookmark/ => adds article with given id to bookmarked list ✔
-// [DELETE]  bookmark/ => removes article with given id from bookmark list
-// [POST]    read/ => stores a record that the user has read the article with the given id
+// [DELETE]  bookmark/ => removes article with given id from bookmark list✔
+// [POST]    read/ => stores a record that the user has read the article with the given id✔
 //
-// [POST]    followSource/   => adds the source with given id to followed sources list
-// [DELETE]  followSource/ => removes the the source with given id from followed sources list
+// [POST]    followSource/   => adds the source with given id to followed sources list✔
+// [DELETE]  followSource/ => removes the the source with given id from followed sources list✔
 //
-// [POST]    followCategory/ => adds the category with given id to followed categorys list
-// [DELETE]  followCategory/ => removes the the category with given id from followed categorys list
+// [POST]    followCategory/ => adds the category with given id to followed categorys list✔
+// [DELETE]  followCategory/ => removes the the category with given id from followed categorys list✔
 //
 // [POST]    blockSource/ => adds the source with given id to blocked sources list
 // [DELETE]  blockSource/ => removes the the source with given id from blocked sources list
@@ -43,23 +43,28 @@ package app
 // [GET]*    search/ => returns list of matching results, based on the search_query[article,author,topic,source]
 func (s *Server) Routes() *Router {
 	router := s.router
-	m := NewMiddleware(s.config)
+	m := NewMiddlewareContainer(s.config)
 
 	var (
 		logger Middleware = m.Logger
 		cors   Middleware = m.CORS
 		auth   Middleware = m.Auth
 	)
-	// router.Group("/api")
+
 	router.GET("/status/", With(s.handleApiStatus, cors, logger))
 
 	router.POST("/login/", With(s.handleLogin, cors, logger))
 	router.POST("/register/", With(s.handleRegister, cors, logger))
 
 	router.POST("/read/", With(s.handleReadArticle, cors, auth, logger))
+
 	router.POST("/bookmark/", With(s.handleBookmarkArticle, cors, auth, logger))
 	router.DELETE("/bookmark/", With(s.handleUnBookmarkArticle, cors, auth, logger))
-	router.POST("/followSource/", With(s.handleFollowSource, cors, auth, logger))
+
 	router.DELETE("/followSource/", With(s.handleUnFollowSource, cors, auth, logger))
+	router.POST("/followSource/", With(s.handleFollowSource, cors, auth, logger))
+
+	router.DELETE("/followCategory/", With(s.handleUnFollowCategory, cors, auth, logger))
+	router.POST("/followCategory/", With(s.handleFollowCategory, cors, auth, logger))
 	return router
 }

@@ -87,7 +87,7 @@ func ValidateStruct(s any) []error {
 				// fieldName := v.Type().Field(i).Name
 
 				err := ValidationErr{
-					Field: jsonName,
+					Field: strings.Split(jsonName, ",")[0],
 					Msg:   err.Error(),
 				}
 				errs = append(errs, err)

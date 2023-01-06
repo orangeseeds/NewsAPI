@@ -1,9 +1,12 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
+	"sort"
 
 	"github.com/orangeseeds/go-api/pkg/util"
+	"golang.org/x/exp/slices"
 )
 
 type Router struct {
@@ -13,9 +16,9 @@ type Router struct {
 }
 
 type Route struct {
-	Methods []string
-	Handler map[string]func(http.ResponseWriter, *http.Request)
-	Path    string
+	Methods  []string
+	Handlers map[string]func(http.ResponseWriter, *http.Request)
+	Path     string
 }
 
 func NewRouter() *Router {
@@ -41,41 +44,55 @@ func (r *Router) Group(group string) {
 	r.activeGroup = group
 }
 
-func With(fn http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
-	if len(middlewares) > 0 {
-		for _, m := range middlewares {
-			fn = m(fn)
-		}
-		return fn
+func (r *Router) RouteList() []string {
+	routes := []string{}
+	for path := range r.routes {
+		routes = append(routes, path)
 	}
-	return http.HandlerFunc(fn)
+	sort.Strings(routes)
+	return routes
+}
+
+func With(fn http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
+	if len(middlewares) == 0 {
+		return http.HandlerFunc(fn)
+	}
+	for _, m := range middlewares {
+		fn = m(fn)
+	}
+	return fn
 }
 
 func (r *Router) add(method, path string, h http.HandlerFunc) {
 	if h == nil {
 		panic("http: nil handler")
 	}
-	grouped := r.activeGroup + path
+	fullPath := r.activeGroup + path
 
-	route, exists := r.routes[path]
+	route, exists := r.routes[fullPath]
 	if !exists {
 		newRoute := &Route{
 			Methods: []string{method},
-			Path:    path,
-			Handler: map[string]func(http.ResponseWriter, *http.Request){
+			Path:    fullPath,
+			Handlers: map[string]func(http.ResponseWriter, *http.Request){
 				method: h,
 			},
 		}
-		r.routes[grouped] = newRoute
-		r.Handle(grouped, newRoute)
+		r.routes[fullPath] = newRoute
+		r.Handle(fullPath, newRoute)
 		return
 	}
+
+	if slices.Contains(route.Methods, method) {
+		panic(fmt.Sprintf("multiple routes defined for %s %s", method, fullPath))
+	}
 	route.Methods = append(route.Methods, method)
-	route.Handler[method] = h
+	route.Handlers[method] = h
+	return
 }
 
 func (route *Route) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	handler, ok := route.Handler[r.Method]
+	handler, ok := route.Handlers[r.Method]
 	if !ok {
 		util.RespondHTTPErr(w, http.StatusMethodNotAllowed)
 		return

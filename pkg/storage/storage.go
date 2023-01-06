@@ -25,6 +25,8 @@ type Storage interface {
 	DelUserBookmarksArticle(string, string) (*api.Article, error)
 	SetUserFollowsSource(string, string) (*api.Source, error)
 	DelUserFollowsSource(string, string) (*api.Source, error)
+	SetUserFollowsCategory(string, string) (*api.Category, error)
+	DelUserFollowsCategory(string, string) (*api.Category, error)
 }
 type storage struct {
 	ctx   context.Context
@@ -39,7 +41,9 @@ func NewStorage(neo neo4j.DriverWithContext, name string) Storage {
 	}
 }
 
+// INFO: Donot forget to run Close() after calling this function.
 func (s storage) RunCypher(cypher string, params map[string]any, mode neo4j.AccessMode) (neo4j.SessionWithContext, neo4j.ResultWithContext, error) {
+
 	dbName, ok := s.ctx.Value("dbName").(string)
 	if !ok {
 		return nil, nil, errors.New("need a dbName in config")
@@ -53,13 +57,13 @@ func (s storage) RunCypher(cypher string, params map[string]any, mode neo4j.Acce
 	res, err := session.Run(s.ctx, cypher, params)
 	if err != nil {
 		defer session.Close(s.ctx)
+
 		neo4jError, ok := err.(*neo4j.Neo4jError)
 		if ok && neo4jError.Title() == "ConstraintValidationFailed" {
 			return nil, nil, NewError(InvalidConstraint, err.Error())
 		}
 		return nil, nil, NewError(NeoError, err.Error())
 	}
-
 	return session, res, nil
 }
 

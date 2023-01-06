@@ -16,7 +16,7 @@ type middlewares struct {
 
 type Middleware func(fn http.HandlerFunc) http.HandlerFunc
 
-func NewMiddleware(config ServerConfig) *middlewares {
+func NewMiddlewareContainer(config ServerConfig) *middlewares {
 	return &middlewares{
 		config: config,
 	}

@@ -2,25 +2,27 @@ package app
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/orangeseeds/go-api/pkg/api"
+	"github.com/orangeseeds/go-api/pkg/util/validator"
 )
 
 type Server struct {
+	http.Server
 	config      ServerConfig
 	router      *Router
 	userService api.UserService
 }
 
 type ServerConfig struct {
-	Uri       string `json:"NEO4J_URI"`
-	Username  string `json:"NEO4J_USERNAME"`
-	Password  string `json:"NEO4J_PASSWORD"`
-	Port      int    `json:"APP_PORT"`
-	JwtSecret string `json:"JWT_SECRET"`
+	Uri       string `json:"NEO4J_URI" validate:"required"`
+	Username  string `json:"NEO4J_USERNAME" validate:"required"`
+	Password  string `json:"NEO4J_PASSWORD" validate:"required"`
+	Port      string `json:"APP_PORT" validate:"required"`
+	JwtSecret string `json:"JWT_SECRET" validate:"required"`
 }
 
 func NewServer(config ServerConfig, router *Router, userService api.UserService) *Server {
@@ -32,29 +34,28 @@ func NewServer(config ServerConfig, router *Router, userService api.UserService)
 }
 
 func (s *Server) Run(addr string) error {
-	if !s.validConfig() {
-		return errors.New("server configurations not valid")
-	}
-	r := s.Routes()
-	return http.ListenAndServe(addr, r)
+	s.Routes()
+
+	s.Addr = addr
+	s.Handler = s.router
+	return s.ListenAndServe()
 }
 
-func (s *Server) validConfig() bool {
-	config := s.config
-	if len(config.Password) == 0 || len(config.Uri) == 0 || len(config.Username) == 0 || len(config.JwtSecret) == 0 {
-		return false
-	}
-	return true
-}
-
-func LoadConfig(path string) ServerConfig {
+func LoadConfig(path string) (ServerConfig, error) {
+	var config ServerConfig
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
-		panic(err)
+		return config, err
 	}
-	config := ServerConfig{}
-	if err = json.Unmarshal(file, &config); err != nil {
-		panic(err)
+
+	err = json.Unmarshal(file, &config)
+	if err != nil {
+		return config, err
 	}
-	return config
+
+	errs := validator.ValidateStruct(config)
+	if len(errs) > 0 {
+		return config, fmt.Errorf("%v", errs)
+	}
+	return config, nil
 }

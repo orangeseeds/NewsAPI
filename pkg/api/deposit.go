@@ -8,13 +8,14 @@ type CreateUserRequest struct {
 
 type LoginRequest struct {
 	// Username string `json:"username"`
-	Password string `json:"password,omitempty" validate:"required"`
 	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password,omitempty" validate:"required"`
 }
 
 type ReadArticleRequest struct {
 	ArticleId string `json:"article_id" validate:"required"`
 }
+
 type BookmarkArticleRequest struct {
 	ArticleId string `json:"article_id" validate:"required"`
 }
@@ -22,8 +23,17 @@ type BookmarkArticleRequest struct {
 type FollowSourceRequest struct {
 	SourceId string `json:"source_id" validate:"required"`
 }
+
 type BlockSourceRequest struct {
 	SourceId string `json:"source_id" validate:"required"`
+}
+
+type FollowCategoryRequest struct {
+	CategoryId string `json:"category_id" validate:"required"`
+}
+
+type BlockCategoryRequest struct {
+	CategoryId string `json:"category_id" validate:"required"`
 }
 
 type User struct {
