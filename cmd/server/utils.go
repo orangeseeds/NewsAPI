@@ -11,7 +11,7 @@ import (
 	"github.com/orangeseeds/go-api/pkg/storage"
 )
 
-// connectDB initializes the driver with username and password authentication,
+// connectDB initializes the driver with username and password authentication.
 // uri parameter points to the host address of the neo4j database. It also check the connectivity with
 // the host and returns neo4j.Driver, returns error if connection cannot be extablished.
 func connectDB(uri string, username string, password string) (neo4j.DriverWithContext, error) {

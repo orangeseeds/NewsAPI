@@ -22,14 +22,8 @@ func (s *Server) handleApiStatus(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	u := api.CreateUserRequest{}
-	err := util.DecodeBody(r, &u)
-	if err != nil {
-		util.RespondHTTPErr(w, http.StatusInternalServerError)
-	}
-
-	errs := validator.ValidateStruct(u)
-	if len(errs) != 0 {
-		util.RespondErr(w, http.StatusBadRequest, errs)
+	ok := validateReqBody(w, r, &u)
+	if !ok {
 		return
 	}
 
@@ -41,6 +35,7 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	token, err := util.AuthToken(s.config.JwtSecret, userId, time.Minute*50)
 	if err != nil {
 		util.RespondHTTPErr(w, http.StatusInternalServerError)
+		return
 	}
 	u.Password = ""
 	util.Respond(w, http.StatusOK, map[string]any{
@@ -53,14 +48,8 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	u := api.LoginRequest{}
-	err := util.DecodeBody(r, &u)
-	if err != nil {
-		util.RespondHTTPErr(w, http.StatusInternalServerError)
-	}
-
-	errs := validator.ValidateStruct(u)
-	if len(errs) > 0 {
-		util.RespondErr(w, http.StatusBadRequest, errs)
+	ok := validateReqBody(w, r, &u)
+	if !ok {
 		return
 	}
 
@@ -72,6 +61,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	token, err := util.AuthToken(s.config.JwtSecret, user.UserId, time.Minute*50)
 	if err != nil {
 		util.RespondHTTPErr(w, http.StatusInternalServerError)
+		return
 	}
 
 	user.UserId = ""
@@ -85,14 +75,8 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleReadArticle(w http.ResponseWriter, r *http.Request) {
 	a := api.ReadArticleRequest{}
-	err := util.DecodeBody(r, &a)
-	if err != nil {
-		util.RespondHTTPErr(w, http.StatusInternalServerError)
-	}
-
-	errs := validator.ValidateStruct(a)
-	if len(errs) != 0 {
-		util.RespondErr(w, http.StatusBadRequest, errs)
+	ok := validateReqBody(w, r, &a)
+	if !ok {
 		return
 	}
 
@@ -112,20 +96,11 @@ func (s *Server) handleReadArticle(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleBookmarkArticle(w http.ResponseWriter, r *http.Request) {
 	a := api.BookmarkArticleRequest{}
-	// ok := decodeAndValidate(w, r, &a)
-	// if !ok {
-	// 	return
-	// }
-	err := util.DecodeBody(r, &a)
-	if err != nil {
-		util.RespondHTTPErr(w, http.StatusInternalServerError)
-	}
-
-	errs := validator.ValidateStruct(a)
-	if len(errs) > 0 {
-		util.RespondErr(w, http.StatusBadRequest, errs)
+	ok := validateReqBody(w, r, &a)
+	if !ok {
 		return
 	}
+
 	userId := r.Context().Value("user").(string)
 	article, err := s.userService.Bookmark(userId, a.ArticleId)
 	if err != nil {
@@ -141,16 +116,11 @@ func (s *Server) handleBookmarkArticle(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleUnBookmarkArticle(w http.ResponseWriter, r *http.Request) {
 	a := api.BookmarkArticleRequest{}
-	err := util.DecodeBody(r, &a)
-	if err != nil {
-		util.RespondHTTPErr(w, http.StatusInternalServerError)
-	}
-
-	errs := validator.ValidateStruct(a)
-	if len(errs) > 0 {
-		util.RespondErr(w, http.StatusBadRequest, errs)
+	ok := validateReqBody(w, r, &a)
+	if !ok {
 		return
 	}
+
 	userId := r.Context().Value("user").(string)
 	article, err := s.userService.UnBookmark(userId, a.ArticleId)
 	if err != nil {
@@ -167,16 +137,11 @@ func (s *Server) handleUnBookmarkArticle(w http.ResponseWriter, r *http.Request)
 
 func (s *Server) handleFollowSource(w http.ResponseWriter, r *http.Request) {
 	a := api.FollowSourceRequest{}
-	err := util.DecodeBody(r, &a)
-	if err != nil {
-		util.RespondHTTPErr(w, http.StatusInternalServerError)
-	}
-
-	errs := validator.ValidateStruct(a)
-	if len(errs) > 0 {
-		util.RespondErr(w, http.StatusBadRequest, errs)
+	ok := validateReqBody(w, r, &a)
+	if !ok {
 		return
 	}
+
 	userId := r.Context().Value("user").(string)
 	source, err := s.userService.FollowSource(userId, a.SourceId)
 	if err != nil {
@@ -193,16 +158,11 @@ func (s *Server) handleFollowSource(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleUnFollowSource(w http.ResponseWriter, r *http.Request) {
 	a := api.FollowSourceRequest{}
-	err := util.DecodeBody(r, &a)
-	if err != nil {
-		util.RespondHTTPErr(w, http.StatusInternalServerError)
-	}
-
-	errs := validator.ValidateStruct(a)
-	if len(errs) > 0 {
-		util.RespondErr(w, http.StatusBadRequest, errs)
+	ok := validateReqBody(w, r, &a)
+	if !ok {
 		return
 	}
+
 	userId := r.Context().Value("user").(string)
 	source, err := s.userService.UnFollowSource(userId, a.SourceId)
 	if err != nil {
@@ -219,16 +179,11 @@ func (s *Server) handleUnFollowSource(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleUnFollowCategory(w http.ResponseWriter, r *http.Request) {
 	a := api.FollowCategoryRequest{}
-	err := util.DecodeBody(r, &a)
-	if err != nil {
-		util.RespondHTTPErr(w, http.StatusInternalServerError)
-	}
-
-	errs := validator.ValidateStruct(a)
-	if len(errs) > 0 {
-		util.RespondErr(w, http.StatusBadRequest, errs)
+	ok := validateReqBody(w, r, &a)
+	if !ok {
 		return
 	}
+
 	userId := r.Context().Value("user").(string)
 	category, err := s.userService.UnFollowCategory(userId, a.CategoryId)
 	if err != nil {
@@ -245,16 +200,11 @@ func (s *Server) handleUnFollowCategory(w http.ResponseWriter, r *http.Request) 
 
 func (s *Server) handleFollowCategory(w http.ResponseWriter, r *http.Request) {
 	a := api.FollowCategoryRequest{}
-	err := util.DecodeBody(r, &a)
-	if err != nil {
-		util.RespondHTTPErr(w, http.StatusInternalServerError)
-	}
-
-	errs := validator.ValidateStruct(a)
-	if len(errs) > 0 {
-		util.RespondErr(w, http.StatusBadRequest, errs)
+	ok := validateReqBody(w, r, &a)
+	if !ok {
 		return
 	}
+
 	userId := r.Context().Value("user").(string)
 	category, err := s.userService.FollowCategory(userId, a.CategoryId)
 	if err != nil {
@@ -269,10 +219,10 @@ func (s *Server) handleFollowCategory(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func decodeAndValidate[T any](w http.ResponseWriter, r *http.Request, v *T) bool {
+func validateReqBody[T any](w http.ResponseWriter, r *http.Request, v *T) bool {
 	err := util.DecodeBody(r, v)
 	if err != nil {
-		util.RespondHTTPErr(w, http.StatusInternalServerError)
+		util.RespondErr(w, http.StatusBadRequest, err)
 		return false
 	}
 

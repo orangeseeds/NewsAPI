@@ -20,6 +20,7 @@ var (
 )
 
 func main() {
+	// test comment
 	flag.Parse()
 	config, err := app.LoadConfig("./config.json")
 	if err != nil {

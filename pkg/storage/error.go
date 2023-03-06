@@ -49,3 +49,12 @@ func NewError(t errType, msg string) *DBError {
 		Msg:  msg,
 	}
 }
+
+// func WrapError(e error) *DBError {
+
+// 	neo4jError, ok := e.(*neo4j.Neo4jError)
+// 	if ok && neo4jError.Title() == "ConstraintValidationFailed" {
+// 		return nil, nil, NewError(InvalidConstraint, e.Error())
+// 	}
+// 	return nil, nil, NewError(NeoError, e.Error())
+// }

@@ -90,6 +90,7 @@ func (s *storage) FindUserByEmailAndPassword(email string, password string) (*ap
 		UserId:   user.UserId,
 		Username: user.Username,
 		Email:    user.Email,
+		Password: user.Password,
 	}, nil
 
 }

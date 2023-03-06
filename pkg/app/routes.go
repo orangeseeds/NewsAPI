@@ -8,7 +8,7 @@ package app
 //
 // [POST]*   login/ => returns JWTtoken for the current user credentials ✔
 // [POST]*   register/ => creates new user with the provided creds and returns JWTtoken ✔
-// [POST]    logout/ => invalidates all the valid JWT token, of the requesting user
+// [POST]    logout/ => invalidates all the currently valid JWT token for a specific user, of the requesting user
 //
 // [GET]     profile => returns user profile information.
 // [POST]    profile/update/ => updates profile information with given info
