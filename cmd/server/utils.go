@@ -7,8 +7,8 @@ import (
 	"log"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
-	"github.com/orangeseeds/go-api/pkg/app"
-	"github.com/orangeseeds/go-api/pkg/storage"
+	"github.com/orangeseeds/NewsAPI/pkg/app"
+	"github.com/orangeseeds/NewsAPI/pkg/storage"
 )
 
 // connectDB initializes the driver with username and password authentication.

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/orangeseeds/go-api/pkg/util"
+	"github.com/orangeseeds/NewsAPI/pkg/util"
 )
 
 type middlewares struct {

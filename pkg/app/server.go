@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/orangeseeds/go-api/pkg/api"
-	"github.com/orangeseeds/go-api/pkg/util/validator"
+	"github.com/orangeseeds/NewsAPI/pkg/api"
+	"github.com/orangeseeds/NewsAPI/pkg/util/validator"
 )
 
 type Server struct {

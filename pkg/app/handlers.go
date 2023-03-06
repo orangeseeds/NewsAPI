@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/orangeseeds/go-api/pkg/api"
-	"github.com/orangeseeds/go-api/pkg/util"
-	"github.com/orangeseeds/go-api/pkg/util/validator"
+	"github.com/orangeseeds/NewsAPI/pkg/api"
+	"github.com/orangeseeds/NewsAPI/pkg/util"
+	"github.com/orangeseeds/NewsAPI/pkg/util/validator"
 )
 
 func (s *Server) handleApiStatus(w http.ResponseWriter, r *http.Request) {

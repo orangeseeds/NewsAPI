@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/orangeseeds/go-api/pkg/util"
+	"github.com/orangeseeds/NewsAPI/pkg/util"
 	"golang.org/x/exp/slices"
 )
 

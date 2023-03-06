@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
-	"github.com/orangeseeds/go-api/pkg/api"
+	"github.com/orangeseeds/NewsAPI/pkg/api"
 )
 
 const (

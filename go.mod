@@ -1,4 +1,4 @@
-module github.com/orangeseeds/go-api
+module github.com/orangeseeds/NewsAPI
 
 go 1.19
 

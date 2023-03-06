@@ -8,9 +8,9 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/orangeseeds/go-api/pkg/api"
-	"github.com/orangeseeds/go-api/pkg/app"
-	"github.com/orangeseeds/go-api/pkg/storage"
+	"github.com/orangeseeds/NewsAPI/pkg/api"
+	"github.com/orangeseeds/NewsAPI/pkg/app"
+	"github.com/orangeseeds/NewsAPI/pkg/storage"
 )
 
 var (

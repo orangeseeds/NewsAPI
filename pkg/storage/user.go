@@ -1,8 +1,8 @@
 package storage
 
 import (
-	"github.com/orangeseeds/go-api/pkg/api"
-	"github.com/orangeseeds/go-api/pkg/util"
+	"github.com/orangeseeds/NewsAPI/pkg/api"
+	"github.com/orangeseeds/NewsAPI/pkg/util"
 )
 
 func (s *storage) CreateUser(request api.CreateUserRequest) (string, error) {
